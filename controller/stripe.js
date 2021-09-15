@@ -1,15 +1,15 @@
-const asyncHanlder = require('express-async-handler');
-const Stripe = require('stripe');
+const asyncHanlder = require("express-async-handler");
+const Stripe = require("stripe");
 const stripeSecretKey =
-  'sk_test_51JZTWQSIUZLasS08u9zNVrRNGjlNZ3u9CiijMHpdMAzeEMIPPvs6AKqaKoGm1yL5IQ8gRxW4CMHh35hNCjrsP7e300LYhor1Mi';
+  "sk_test_51JZTWQSIUZLasS08u9zNVrRNGjlNZ3u9CiijMHpdMAzeEMIPPvs6AKqaKoGm1yL5IQ8gRxW4CMHh35hNCjrsP7e300LYhor1Mi";
 
 exports.createCustomer = asyncHanlder(async (req, res, next) => {
   const { name } = req.query;
   console.log(name);
   if (!name) {
     return res.status(200).json({
-      status: 'Warning',
-      message: 'Enter Customer Name - query',
+      status: "Warning",
+      message: "Enter Customer Name - query",
     });
   }
 
@@ -18,35 +18,38 @@ exports.createCustomer = asyncHanlder(async (req, res, next) => {
   const customer = await stripe.customers.create({
     name: name,
     address: {
-      city: 'Chennai',
-      country: 'India',
-      line1: '123 , Abcd street',
-      postal_code: '123456',
-      state: 'TamilNadu',
+      city: "adc city",
+      country: "usa",
+      line1: "123 , Abcd street",
+      postal_code: "123456",
+      state: "abcd state",
     },
     // currency: 'inr',
     email: `${name}@test.com`,
-    description: 'My Test Customer',
+    description: "My Test Customer",
     metadata: {
-      productId: '123abcd456efgh',
+      agencyName: "TestName Agency",
+      agencyEmail: "agencyTest@test.com",
+      agencyId: "1234567890",
     },
   });
   console.log(customer);
   res.status(200).json({
-    status: 'Success',
-    message: 'Good to Go',
+    status: "Success",
+    message: "Good to Go",
+    customer,
   });
 });
 
 exports.getCustomerFromStripe = asyncHanlder(async (req, res, next) => {
   const stripe = Stripe(stripeSecretKey);
 
-  const customer = await stripe.customers.retrieve('cus_KE5AtPD46hCuWa');
+  const customer = await stripe.customers.retrieve("cus_KE5AtPD46hCuWa");
 
   console.log(customer);
 
   res.status(200).json({
-    status: 'Success',
+    status: "Success",
     data: customer,
   });
 });
@@ -55,12 +58,12 @@ exports.createSubscription = asyncHanlder(async (req, res, next) => {
   const stripe = Stripe(stripeSecretKey);
 
   const subscription = await stripe.subscriptions.create({
-    customer: 'cus_KE20K5N0JJjH7S',
+    customer: "cus_KE20K5N0JJjH7S",
     // default_source: 'card_18NVYR2eZvKYlo2CQ2ieV9S5',
-    items: [{ price: 'price_1JZUhRSIUZLasS08U1banUmU' }],
+    items: [{ price: "price_1JZUhRSIUZLasS08U1banUmU" }],
   });
   res.status(201).json({
-    status: 'Success',
+    status: "Success",
     data: subscription,
   });
 });
@@ -68,24 +71,69 @@ exports.createSubscription = asyncHanlder(async (req, res, next) => {
 exports.createSession = asyncHanlder(async (req, res, next) => {
   const stripe = Stripe(stripeSecretKey);
 
+  const { customerId, priceId } = req.query;
+  console.log(req.query);
+
+  if (!customerId || !priceId) {
+    return res.status(200).json({
+      status: "Warning",
+      message: "Enter Customer ID and Price Id - query(customerId,priceId)",
+    });
+  }
+
   const checkOutSession = await stripe.checkout.sessions.create({
-    success_url: 'http://localhost:4500/paymentSuccess',
-    cancel_url: 'http://localhost:4500/',
-    payment_method_types: ['card'],
-    line_items: [{ price: 'price_1JZdjbSIUZLasS087dwqesuG', quantity: 1 }],
-    mode: 'subscription',
-    customer: 'cus_KELGSVcWGQq43H',
+    success_url: "http://localhost:8080",
+    cancel_url: "http://localhost:4500/",
+    payment_method_types: ["card"],
+    line_items: [{ price: priceId, quantity: 1 }],
+    mode: "subscription",
+    customer: customerId,
     metadata: {
-      agencyName: 'TestName Agency',
-      agencyEmail: 'agencyTest@test.com',
-      agencyId: '1234567890',
+      agencyName: "TestName Agency",
+      agencyEmail: "agencyTest@test.com",
+      agencyId: "1234567890",
     },
   });
 
   console.log(checkOutSession);
 
   res.status(200).json({
-    status: 'success',
+    status: "success",
+    data: checkOutSession,
+  });
+});
+
+exports.createSessionForPayment = asyncHanlder(async (req, res, next) => {
+  const stripe = Stripe(stripeSecretKey);
+
+  const { customerId, priceId } = req.query;
+  console.log(req.query);
+
+  if (!customerId || !priceId) {
+    return res.status(200).json({
+      status: "Warning",
+      message: "Enter Customer ID and Price Id - query(customerId,priceId)",
+    });
+  }
+
+  const checkOutSession = await stripe.checkout.sessions.create({
+    success_url: "http://localhost:8080",
+    cancel_url: "http://localhost:4500/",
+    payment_method_types: ["card"],
+    line_items: [{ price: priceId, quantity: 1 }],
+    mode: "payment",
+    customer: customerId,
+    metadata: {
+      agencyName: "TestName Agency",
+      agencyEmail: "agencyTest@test.com",
+      agencyId: "1234567890",
+    },
+  });
+
+  console.log(checkOutSession);
+
+  res.status(200).json({
+    status: "success",
     data: checkOutSession,
   });
 });
@@ -94,21 +142,21 @@ exports.createProduct = asyncHanlder(async (req, res, next) => {
   const stripe = Stripe(stripeSecretKey);
 
   const newProduct = await stripe.products.create({
-    name: 'Digitial Marketing',
+    name: "Digitial Marketing",
     metadata: {
-      targetAudience: 'Marketing Users',
+      targetAudience: "Marketing Users",
     },
   });
 
   const price = await stripe.prices.create({
-    unit_amount: 1000,
-    currency: 'inr',
-    recurring: { interval: 'month' },
+    unit_amount: 1000 * 100,
+    currency: "inr",
+    recurring: { interval: "month" },
     product: newProduct.id,
   });
 
   res.status(200).json({
-    status: 'Success',
+    status: "Success",
     data: {
       newProduct,
       price,
@@ -119,12 +167,12 @@ exports.createProduct = asyncHanlder(async (req, res, next) => {
 exports.getProductDetails = asyncHanlder(async (req, res, next) => {
   const stripe = Stripe(stripeSecretKey);
 
-  const product = await stripe.products.retrieve('prod_KE5vEoqFrJG5dr');
+  const product = await stripe.products.retrieve("prod_KE5vEoqFrJG5dr");
 
   console.log(product);
 
   res.status(200).json({
-    status: 'Success',
+    status: "Success",
     data: product,
   });
 });
@@ -132,12 +180,12 @@ exports.getProductDetails = asyncHanlder(async (req, res, next) => {
 exports.getPriceDetails = asyncHanlder(async (req, res, next) => {
   const stripe = Stripe(stripeSecretKey);
 
-  const price = await stripe.prices.retrieve('price_1JZsHESIUZLasS08PYINeh0y');
+  const price = await stripe.prices.retrieve("price_1JZsHESIUZLasS08PYINeh0y");
 
   console.log(price);
 
   res.status(200).json({
-    status: 'Success',
+    status: "Success",
     data: price,
   });
 });
